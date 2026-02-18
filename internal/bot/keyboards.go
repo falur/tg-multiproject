@@ -9,14 +9,14 @@ import (
 )
 
 var (
-	btnMyProjects    = tele.InlineButton{Unique: "my_projects", Text: "My Projects"}
-	btnCreateProject = tele.InlineButton{Unique: "create_project", Text: "Create Project"}
-	btnModePlan      = tele.InlineButton{Unique: "mode_plan", Text: "Plan Mode"}
-	btnModeEdit      = tele.InlineButton{Unique: "mode_edit", Text: "Edit Mode"}
-	btnSessions      = tele.InlineButton{Unique: "sessions", Text: "Sessions"}
-	btnCancel        = tele.InlineButton{Unique: "cancel_task", Text: "Cancel"}
-	btnSkip          = tele.InlineButton{Unique: "skip", Text: "Skip"}
-	btnBack          = tele.InlineButton{Unique: "back", Text: "Back"}
+	btnMyProjects    = tele.InlineButton{Unique: "my_projects", Text: "Мои проекты"}
+	btnCreateProject = tele.InlineButton{Unique: "create_project", Text: "Создать проект"}
+	btnModePlan      = tele.InlineButton{Unique: "mode_plan", Text: "Режим Plan"}
+	btnModeEdit      = tele.InlineButton{Unique: "mode_edit", Text: "Режим Edit"}
+	btnSessions      = tele.InlineButton{Unique: "sessions", Text: "Сессии"}
+	btnCancel        = tele.InlineButton{Unique: "cancel_task", Text: "Отмена"}
+	btnSkip          = tele.InlineButton{Unique: "skip", Text: "Пропустить"}
+	btnBack          = tele.InlineButton{Unique: "back", Text: "Назад"}
 )
 
 func mainMenuKeyboard() *tele.ReplyMarkup {
@@ -46,10 +46,10 @@ func projectContextKeyboard(mode string) *tele.ReplyMarkup {
 	var modeBtn tele.InlineButton
 	if mode == "plan" {
 		modeBtn = btnModeEdit
-		modeBtn.Text = "Switch to Edit Mode"
+		modeBtn.Text = "Переключить на Edit"
 	} else {
 		modeBtn = btnModePlan
-		modeBtn.Text = "Switch to Plan Mode"
+		modeBtn.Text = "Переключить на Plan"
 	}
 	rm.InlineKeyboard = [][]tele.InlineButton{
 		{modeBtn},

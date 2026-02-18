@@ -6,7 +6,7 @@ func authMiddleware(allowedUserID int64) tele.MiddlewareFunc {
 	return func(next tele.HandlerFunc) tele.HandlerFunc {
 		return func(c tele.Context) error {
 			if c.Sender().ID != allowedUserID {
-				return c.Send("Access denied.")
+				return c.Send("Доступ запрещён.")
 			}
 			return next(c)
 		}

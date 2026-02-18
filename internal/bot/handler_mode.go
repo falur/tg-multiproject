@@ -19,23 +19,23 @@ func (b *Bot) handleModeEdit(c tele.Context) error {
 func (b *Bot) setMode(c tele.Context, mode string) error {
 	us := b.state.Get(c.Sender().ID)
 	if us.ActiveProject == nil {
-		return c.Respond(&tele.CallbackResponse{Text: "No project selected"})
+		return c.Respond(&tele.CallbackResponse{Text: "Проект не выбран"})
 	}
 
 	if err := b.store.UpdateProjectMode(*us.ActiveProject, mode); err != nil {
-		return c.Respond(&tele.CallbackResponse{Text: "Error: " + err.Error()})
+		return c.Respond(&tele.CallbackResponse{Text: "Ошибка: " + err.Error()})
 	}
 
 	us.Mode = mode
 
 	project, err := b.store.GetProject(*us.ActiveProject)
 	if err != nil {
-		return c.Respond(&tele.CallbackResponse{Text: "Error: " + err.Error()})
+		return c.Respond(&tele.CallbackResponse{Text: "Ошибка: " + err.Error()})
 	}
 
-	_ = c.Respond(&tele.CallbackResponse{Text: fmt.Sprintf("Mode: %s", mode)})
+	_ = c.Respond(&tele.CallbackResponse{Text: fmt.Sprintf("Режим: %s", mode)})
 
-	text := fmt.Sprintf("Project: *%s*\nMode: *%s*\nPath: `%s`\n\nSend a task or use the buttons below.",
+	text := fmt.Sprintf("Проект: *%s*\nРежим: *%s*\nПуть: `%s`\n\nОтправьте задачу или используйте кнопки ниже.",
 		project.Name, project.Mode, project.Path)
 	return c.Edit(text, projectContextKeyboard(mode), tele.ModeMarkdown)
 }
@@ -49,8 +49,8 @@ func (b *Bot) handleText(c tele.Context) error {
 	case state.StepInProject:
 		return b.handleTaskSubmission(c, us)
 	case state.StepRunning:
-		return c.Send("A task is already running. Use /cancel to stop it.")
+		return c.Send("Задача уже выполняется. Используйте /cancel для отмены.")
 	default:
-		return c.Send("Use /start to begin.", mainMenuKeyboard())
+		return c.Send("Используйте /start для начала.", mainMenuKeyboard())
 	}
 }

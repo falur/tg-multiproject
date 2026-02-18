@@ -16,15 +16,15 @@ import (
 
 func (b *Bot) handleTaskSubmission(c tele.Context, us *state.UserState) error {
 	if us.ActiveProject == nil {
-		return c.Send("No project selected. Use /start.")
+		return c.Send("Проект не выбран. Используйте /start.")
 	}
 
 	project, err := b.store.GetProject(*us.ActiveProject)
 	if err != nil {
-		return c.Send("Error loading project: " + err.Error())
+		return c.Send("Ошибка загрузки проекта: " + err.Error())
 	}
 
-	statusMsg, err := b.tele.Send(c.Recipient(), "Starting Claude...", runningKeyboard())
+	statusMsg, err := b.tele.Send(c.Recipient(), "Запускаю Claude...", runningKeyboard())
 	if err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func (b *Bot) processClaudeStream(
 	}
 
 	var buf strings.Builder
-	buf.WriteString("Claude is working...\n\n")
+	buf.WriteString("Claude работает...\n\n")
 	dirty := false
 	var lastSessionID string
 	var resultText string
@@ -94,12 +94,11 @@ func (b *Bot) processClaudeStream(
 		select {
 		case ev, ok := <-events:
 			if !ok {
-				// Channel closed — check for errors
 				flush()
 				select {
 				case err := <-errc:
 					if err != nil {
-						buf.WriteString("\n\nError: " + err.Error())
+						buf.WriteString("\n\nОшибка: " + err.Error())
 					}
 				default:
 				}
@@ -113,7 +112,7 @@ func (b *Bot) processClaudeStream(
 			flush()
 
 		case <-ctx.Done():
-			_, _ = b.tele.Edit(&stored, buf.String()+"\n\nCancelled.")
+			_, _ = b.tele.Edit(&stored, buf.String()+"\n\nОтменено.")
 			b.resetAfterStream(userID)
 			return
 		}
@@ -133,7 +132,7 @@ func (b *Bot) handleEvent(ev *claude.StreamEvent, buf *strings.Builder, sessionI
 				case "text":
 					buf.WriteString(block.Text)
 				case "tool_use":
-					fmt.Fprintf(buf, "\n[Tool: %s]\n", block.Name)
+					fmt.Fprintf(buf, "\n[Инструмент: %s]\n", block.Name)
 				}
 			}
 		}
@@ -147,7 +146,7 @@ func (b *Bot) handleEvent(ev *claude.StreamEvent, buf *strings.Builder, sessionI
 				*resultText = ev.Result.Result
 			}
 			if ev.Result.TotalCost > 0 {
-				fmt.Fprintf(buf, "\n\nCost: $%.4f | Turns: %d", ev.Result.TotalCost, ev.Result.NumTurns)
+				fmt.Fprintf(buf, "\n\nСтоимость: $%.4f | Шагов: %d", ev.Result.TotalCost, ev.Result.NumTurns)
 			}
 		}
 	}
@@ -156,7 +155,6 @@ func (b *Bot) handleEvent(ev *claude.StreamEvent, buf *strings.Builder, sessionI
 func (b *Bot) finishStream(userID int64, stored *tele.StoredMessage, buf *strings.Builder, sessionID, resultText string) {
 	us := b.state.Get(userID)
 
-	// Save session if we got one
 	if sessionID != "" && us.ActiveProject != nil {
 		summary := resultText
 		if len(summary) > 200 {
@@ -166,16 +164,14 @@ func (b *Bot) finishStream(userID int64, stored *tele.StoredMessage, buf *string
 		us.SessionID = sessionID
 	}
 
-	// Build final text
 	finalText := buf.String()
 	if resultText != "" {
 		finalText = resultText
 		if sessionID != "" {
-			finalText += fmt.Sprintf("\n\nSession: `%s`", sessionID)
+			finalText += fmt.Sprintf("\n\nСессия: `%s`", sessionID)
 		}
 	}
 
-	// If text is too long, send as a file
 	if len(finalText) > 4096 {
 		doc := &tele.Document{
 			File:     tele.FromReader(bytes.NewReader([]byte(finalText))),
@@ -184,7 +180,7 @@ func (b *Bot) finishStream(userID int64, stored *tele.StoredMessage, buf *string
 		chatID := stored.ChatID
 		chat := &tele.Chat{ID: chatID}
 		_, _ = b.tele.Send(chat, doc)
-		_, _ = b.tele.Edit(stored, "Result sent as file.", projectContextKeyboard(us.Mode))
+		_, _ = b.tele.Edit(stored, "Результат отправлен файлом.", projectContextKeyboard(us.Mode))
 	} else {
 		if len(finalText) > 4000 {
 			finalText = finalText[:4000] + "..."

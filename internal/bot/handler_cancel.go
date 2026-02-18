@@ -9,7 +9,7 @@ import (
 func (b *Bot) handleCancel(c tele.Context) error {
 	us := b.state.Get(c.Sender().ID)
 	if us.Step != state.StepRunning {
-		return c.Send("Nothing is running.")
+		return c.Send("Нет запущенных задач.")
 	}
 
 	b.mu.Lock()
@@ -24,6 +24,6 @@ func (b *Bot) handleCancel(c tele.Context) error {
 }
 
 func (b *Bot) handleCancelCallback(c tele.Context) error {
-	_ = c.Respond(&tele.CallbackResponse{Text: "Cancelling..."})
+	_ = c.Respond(&tele.CallbackResponse{Text: "Отменяю..."})
 	return b.handleCancel(c)
 }

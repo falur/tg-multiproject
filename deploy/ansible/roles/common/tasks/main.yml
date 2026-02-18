@@ -1,0 +1,80 @@
+---
+- name: Install system packages
+  ansible.builtin.apt:
+    name:
+      - git
+      - curl
+      - jq
+      - sqlite3
+      - build-essential
+    state: present
+    update_cache: true
+
+- name: Check if Go is installed
+  ansible.builtin.command: /usr/local/go/bin/go version
+  register: go_version
+  ignore_errors: true
+  changed_when: false
+
+- name: Download Go 1.22
+  ansible.builtin.get_url:
+    url: https://go.dev/dl/go1.22.10.linux-amd64.tar.gz
+    dest: /tmp/go.tar.gz
+  when: go_version.rc != 0
+
+- name: Install Go
+  ansible.builtin.unarchive:
+    src: /tmp/go.tar.gz
+    dest: /usr/local
+    remote_src: true
+  when: go_version.rc != 0
+
+- name: Add Go to PATH
+  ansible.builtin.copy:
+    content: 'export PATH=$PATH:/usr/local/go/bin:/home/bot/go/bin'
+    dest: /etc/profile.d/go.sh
+    mode: "0644"
+
+- name: Install Node.js 18 (for Claude CLI)
+  ansible.builtin.shell: |
+    curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+    apt-get install -y nodejs
+  args:
+    creates: /usr/bin/node
+
+- name: Install Claude CLI
+  ansible.builtin.command: npm install -g @anthropic-ai/claude-code
+  args:
+    creates: /usr/bin/claude
+
+- name: Add GitHub CLI apt key and repo
+  ansible.builtin.shell: |
+    curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/github-cli.list
+  args:
+    creates: /usr/share/keyrings/githubcli-archive-keyring.gpg
+
+- name: Install gh CLI
+  ansible.builtin.apt:
+    name: gh
+    state: present
+    update_cache: true
+
+- name: Create bot user
+  ansible.builtin.user:
+    name: bot
+    shell: /bin/bash
+    create_home: true
+
+- name: Create bot directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: bot
+    group: bot
+    mode: "0755"
+  loop:
+    - /home/bot/projects
+    - /home/bot/data
+    - /home/bot/bin
+    - /home/bot/src

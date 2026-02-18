@@ -1,0 +1,6 @@
+---
+- name: Setup bot server
+  hosts: bot
+  become: true
+  roles:
+    - common

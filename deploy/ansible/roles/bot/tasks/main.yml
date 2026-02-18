@@ -1,0 +1,62 @@
+---
+- name: Clone/update repo (github method)
+  ansible.builtin.git:
+    repo: "{{ repo_url }}"
+    dest: "{{ bot_src }}"
+    version: main
+    force: true
+  become_user: "{{ bot_user }}"
+  when: deploy_method == "github"
+
+- name: Sync local files (rsync method)
+  ansible.posix.synchronize:
+    src: "{{ playbook_dir }}/../../"
+    dest: "{{ bot_src }}"
+    rsync_opts:
+      - "--exclude=.git"
+      - "--exclude=bin"
+      - "--exclude=data"
+      - "--exclude=projects"
+      - "--exclude=.env"
+  when: deploy_method == "rsync"
+
+- name: Set ownership after sync
+  ansible.builtin.file:
+    path: "{{ bot_src }}"
+    owner: "{{ bot_user }}"
+    group: "{{ bot_user }}"
+    recurse: true
+  when: deploy_method == "rsync"
+
+- name: Build binary
+  ansible.builtin.command:
+    cmd: /usr/local/go/bin/go build -o {{ bot_bin }} ./cmd/bot
+    chdir: "{{ bot_src }}"
+  become_user: "{{ bot_user }}"
+  environment:
+    GOPATH: "/home/{{ bot_user }}/go"
+    GOCACHE: "/home/{{ bot_user }}/.cache/go-build"
+  notify: restart bot
+
+- name: Template .env file
+  ansible.builtin.template:
+    src: bot.env.j2
+    dest: "{{ bot_home }}/.env"
+    owner: "{{ bot_user }}"
+    group: "{{ bot_user }}"
+    mode: "0600"
+  notify: restart bot
+
+- name: Template systemd unit
+  ansible.builtin.template:
+    src: bot.service.j2
+    dest: /etc/systemd/system/tg-multiproject.service
+    mode: "0644"
+  notify: restart bot
+
+- name: Enable and start bot service
+  ansible.builtin.systemd:
+    name: tg-multiproject
+    enabled: true
+    state: started
+    daemon_reload: true

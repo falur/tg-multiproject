@@ -1,0 +1,15 @@
+[Unit]
+Description=Telegram Multi-Project Bot
+After=network.target
+
+[Service]
+Type=simple
+User={{ bot_user }}
+WorkingDirectory={{ bot_home }}
+EnvironmentFile={{ bot_home }}/.env
+ExecStart={{ bot_bin }}
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
